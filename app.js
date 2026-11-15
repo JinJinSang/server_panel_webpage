@@ -151,11 +151,21 @@
       (!q || [p.user, p.account, p.job, p.name].some(x => String(x).toLowerCase().includes(q))) && (!onlyMine || p.feasibility === "runnable" && p.priority >= myMin));
     $("#q-count").textContent = `${rows.length} rows`;
     const h = `<tr><th class="num">#</th><th>job</th><th>user</th><th>account · QoS</th><th>request</th><th>partition</th><th class="num">waited</th><th>score</th><th>status</th><th>Slurm est.</th><th>planner (limit / typical)</th></tr>`;
+    const explain = p => {
+      const q = s.qos[p.qos] || {}, grp = !["standard", "basic", "priority"].includes(p.qos);
+      const what = p.tasks > 1 ? `Job array: ${p.tasks} tasks, each ${p.gpus_per_node}×${skuName(p.sku)}${p.nodes > 1 ? ` on ${p.nodes} nodes` : ""} for up to ${fmtMin(p.limit_min)}${p.throttle ? `, at most ${p.throttle} tasks running at once` : ""}. A new task starts whenever one finishes.`
+        : `Single job: ${p.gpus_per_node}×${skuName(p.sku)}${p.nodes > 1 ? ` on ${p.nodes} nodes` : ""} for up to ${fmtMin(p.limit_min)}.`;
+      const qosTxt = grp ? `QoS ${p.qos}: +${q.points ?? "?"} priority points; the group may hold at most ${q.grp_gpus ?? "?"} GPUs at a time and holds ${q.running_gpus ?? "?"} now.`
+        : p.qos === "priority" ? `QoS priority: +${q.points ?? 1000} points, paid with credit.` : `QoS ${p.qos}: no bonus; rank comes from fair-share and waiting time.`;
+      return `${what}\n${qosTxt}\nStatus: ${p.feasibility}${p.reason ? ` (${p.reason})` : ""}.`;
+    };
     $("#queue").innerHTML = h + rows.slice(0, 400).map((p, i) => {
       const est = p.plan ? `${fmtMin(p.plan.limit)} / ${fmtMin(p.plan.typical)}` : "–";
       const slurm = p.slurm_start ? fmtMin((new Date(p.slurm_start) - new Date(s.generated)) / 60000) : "–";
-      return `<tr class="${p.user === me ? "mine" : ""}"><td class="num">${i + 1}</td><td>${esc(p.job)}${p.tasks > 1 ? ` <span class="muted">×${p.tasks}${p.throttle ? ` (≤${p.throttle} at once)` : ""}</span>` : ""}<br><span class="muted">${esc(p.name)}</span></td>` +
-        `<td>${esc(p.user)}</td><td>${esc(p.account)}<br><span class="muted">${esc(p.qos)}</span></td><td>${req(p)}</td><td>${esc(p.partition)}</td><td class="num">${fmtMin(p.waited_min)}</td>` +
+      const q = s.qos[p.qos] || {}, grp = !["standard", "basic", "priority"].includes(p.qos);
+      const qosCell = grp ? `<span class="badge cap" title="group cap">${esc(p.qos)} · cap ${q.grp_gpus ?? "?"} GPUs, ${q.running_gpus ?? "?"} in use</span>` : `<span class="muted">${esc(p.qos)}${q.points ? ` +${q.points}` : ""}</span>`;
+      return `<tr class="${p.user === me ? "mine" : ""}" data-tip="${esc(explain(p))}"><td class="num">${i + 1}</td><td>${esc(p.job)}${p.tasks > 1 ? `<br><span class="muted">array · ${p.tasks} tasks${p.throttle ? `, ≤${p.throttle} at once` : ""}</span>` : ""}<br><span class="muted">${esc(p.name)}</span></td>` +
+        `<td>${esc(p.user)}</td><td>${esc(p.account)}<br>${qosCell}</td><td>${p.tasks > 1 ? `<span class="muted">each task: </span>` : ""}${req(p)}</td><td>${esc(p.partition)}</td><td class="num">${fmtMin(p.waited_min)}</td>` +
         `<td>${scoreBar(p)}<b>${p.priority}</b></td><td><span class="badge ${p.feasibility}">${p.feasibility}</span><br><span class="muted">${esc(p.reason || "")}</span></td><td>${slurm}</td><td>${est}</td></tr>`;
     }).join("") + (rows.length > 400 ? `<tr><td colspan="11" class="muted">… ${rows.length - 400} more rows (use the filters)</td></tr>` : "");
   }
