@@ -117,9 +117,9 @@
 
   // ---------------------------------------------------------------- queue tab
   function scoreBar(p) {
-    const b = p.prio; if (!b) return `<span class="score" title="no breakdown from sprio"></span>`;
+    const b = p.prio; if (!b) return `<span class="score" title="no breakdown available"></span>`;
     const max = 10000, w = k => `${(100 * Math.min(max, b[k]) / max).toFixed(1)}%`;
-    return `<span class="score" title="fair-share ${b.fairshare} · QoS ${b.qos} · age ${b.age} · size ${b.size}"><i class="fs" style="width:${w("fairshare")}"></i><i class="qos" style="width:${w("qos")}"></i><i class="age" style="width:${w("age")}"></i><i class="size" style="width:${w("size")}"></i></span>`;
+    return `<span class="score${b.estimated ? " est" : ""}" title="fair-share ${b.fairshare} · QoS ${b.qos} · age ${b.age} · size ${b.size}${b.estimated ? " (estimated: Slurm reports no breakdown while the job is not eligible)" : ""}"><i class="fs" style="width:${w("fairshare")}"></i><i class="qos" style="width:${w("qos")}"></i><i class="age" style="width:${w("age")}"></i><i class="size" style="width:${w("size")}"></i></span>`;
   }
   function renderQueue() {
     const s = state.snap, me = s.user;
@@ -193,7 +193,7 @@
       const e = est.queued[p.job] || {}; const b = p.prio || {};
       const hb = e.history ? `${fmtH(e.history.median_h)} median · ${fmtH(e.history.p90_h)} p90 (n=${e.history.n})` : "–";
       return `<div class="card"><h3>${esc(p.job)} <small>${esc(p.name)}</small></h3><div class="note">${req(p)} · ${esc(p.qos)} · ${esc(p.partition)} · <span class="badge ${p.feasibility}">${p.feasibility}</span> ${esc(p.reason || "")}</div>` +
-        `<div class="kv"><span>score ${scoreBar(p)}<b>${p.priority}</b></span><span>fair-share ${b.fairshare ?? "–"} · QoS ${b.qos ?? "–"} · age ${b.age ?? "–"} · size ${b.size ?? "–"}</span></div>` +
+        `<div class="kv"><span>score ${scoreBar(p)}<b>${p.priority}</b></span><span>fair-share ${b.fairshare ?? "–"} · QoS ${b.qos ?? "–"} · age ${b.age ?? "–"} · size ${b.size ?? "–"}${b.estimated ? " (estimated)" : ""}</span></div>` +
         `<div class="kv"><span>ahead of me: <b>${e.jobs_ahead ?? "–"}</b> jobs (${e.tasks_ahead ?? "–"} tasks wanting ${e.gpus_ahead ?? "–"} GPUs) of ${e.competitors ?? "–"} competing for ${skuName(e.sku)}</span></div>` +
         `<div class="kv"><span>submitted ${fmtTs(p.submit)} · waited <b>${fmtMin(p.waited_min)}</b></span></div>` +
         `<div class="kv"><span>Slurm's estimate <b>${p.slurm_start ? fmtTs(p.slurm_start) : "none"}</b></span></div>` +

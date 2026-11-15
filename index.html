@@ -96,6 +96,7 @@ tr.mine td { background: color-mix(in srgb, var(--s1) 12%, var(--surface)); }
 .badge.held, .badge.dependency, .badge.other-partition { background: var(--surface-2); color: var(--ink-2); }
 .score { display: inline-flex; width: 120px; height: 10px; border-radius: 3px; overflow: hidden; background: var(--grid); vertical-align: middle; margin-right: 6px; gap: 1px; }
 .score i { display: block; height: 100%; }
+.score.est { opacity: .6; outline: 1px dashed var(--muted); }
 .score .fs { background: var(--s1); } .score .qos { background: var(--s2); } .score .age { background: var(--s3); } .score .size { background: var(--s4); }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
 .card { background: var(--surface); border: 1px solid var(--grid); border-radius: var(--radius); padding: 11px 13px; }
@@ -161,6 +162,7 @@ dialog input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid v
       <p><b>Job array</b>: one submission that creates many tasks; each task needs the request shown ("each task: …"). Tasks start one after another as GPUs free up, so a large array keeps taking GPUs for a long time. "≤ N at once" is the array's own limit on running tasks.</p>
       <p><b>Group QoS</b> (orange badge): the account's group gets +5,000 to +8,000 priority points but may hold at most the shown number of GPUs at a time, across all its members and GPU types. "in use" is how many it holds right now; when it is at its cap, its queued tasks wait however high they rank.</p>
       <p><b>Score</b>: fair-share (account's recent usage vs. its share) + QoS bonus + waiting time (up to 1,000 after 14 days) + size (1,000 for everyone). Higher starts first. <b>Status</b>: runnable = only waiting for priority or resources; blocked = held back by a cap or a deferred start; never = cannot run as submitted (e.g. time limit over the partition maximum).</p>
+      <p><b>Score bars</b> drawn faded with a dashed outline are estimated: Slurm publishes the breakdown only for jobs it currently treats as eligible (not held, not waiting on a dependency, not at an array task limit); the total is always exact.</p>
       <p><b>Planner</b>: when this job would start if every job ahead of it ran to its time limit / to its user's typical run time. Hover a row for a plain-English summary.</p>
     </details>
     <div class="tw"><table id="queue"></table></div>
