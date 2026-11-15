@@ -50,6 +50,10 @@ header { position: sticky; top: 0; z-index: 5; background: var(--surface); borde
 .tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .chip[aria-pressed="true"] { background: var(--seq-150); border-color: var(--seq-250); }
 main { max-width: 1400px; margin: 0 auto; padding: 14px 16px 60px; }
+/* the queue table uses the full window width */
+#tab-queue .tw.full { width: calc(100vw - 32px); margin-left: calc(50% - 50vw + 16px); }
+#queue td:nth-child(2), #queue td:nth-child(4) { white-space: normal; min-width: 150px; max-width: 260px; overflow-wrap: anywhere; }
+#queue .score { width: 90px; }
 section[hidden] { display: none; }
 h2 { font-size: 15px; margin: 22px 0 10px; font-weight: 650; }
 h2 small { color: var(--muted); font-weight: 400; margin-left: 8px; }
@@ -165,7 +169,7 @@ dialog input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid v
       <p><b>Score bars</b> drawn faded with a dashed outline are estimated: Slurm publishes the breakdown only for jobs it currently treats as eligible (not held, not waiting on a dependency, not at an array task limit); the total is always exact.</p>
       <p><b>Planner</b>: when this job would start if every job ahead of it ran to its time limit / to its user's typical run time. Hover a row for a plain-English summary.</p>
     </details>
-    <div class="tw"><table id="queue"></table></div>
+    <div class="tw full"><table id="queue"></table></div>
   </section>
   <section id="tab-mine" hidden>
     <div class="tiles" id="mine-tiles"></div>
@@ -189,6 +193,6 @@ dialog input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid v
   <label>Token</label><input id="cfg-token" type="password" placeholder="github_pat_…">
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="cfg-cancel">Cancel</button><button class="btn" id="cfg-save">Save</button></div>
 </dialog>
-<script src="app.js?v=202611152134"></script>
+<script src="app.js?v=202611152135"></script>
 </body>
 </html>
