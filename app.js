@@ -16,6 +16,8 @@
   const fmtTs = s => { if (!s) return "–"; const d = new Date(s); return isNaN(d) ? s : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
   const gb = mb => mb >= 1024 ? `${Math.round(mb / 1024)}G` : `${mb}M`;
   const req = j => `${j.gpus_per_node}×${skuName(j.sku)}${j.nodes > 1 ? ` ×${j.nodes}n` : ""} · ${j.cpus_per_node}c · ${gb(j.mem_mb)} · ${fmtMin(j.limit_min)}`;
+  const shortReason = r => !r ? "" : r.startsWith("Nodes required for job are DOWN") ? "required nodes down or reserved"
+    : r.startsWith("ReqNodeNotAvail") ? "required nodes unavailable" : r.replace("QOSMaxJobsPerUserLimit", "per-user job limit (QoS)").replace("QOSGrpGRES", "group GPU cap").replace("JobArrayTaskLimit", "array task limit");
   const state = { snap: null, hist: null, sku: localStorage.getItem("sku") || "l40s", tab: location.hash.slice(1) || "nodes" };
 
   // ---------------------------------------------------------------- data loading
@@ -166,7 +168,7 @@
       const qosCell = grp ? `<span class="badge cap" title="group cap">${esc(p.qos)} · cap ${q.grp_gpus ?? "?"} GPUs, ${q.running_gpus ?? "?"} in use</span>` : `<span class="muted">${esc(p.qos)}${q.points ? ` +${q.points}` : ""}</span>`;
       return `<tr class="${p.user === me ? "mine" : ""}" data-tip="${esc(explain(p))}"><td class="num">${i + 1}</td><td>${esc(p.job)}${p.tasks > 1 ? `<br><span class="muted">array · ${p.tasks} tasks${p.throttle ? `, ≤${p.throttle} at once` : ""}</span>` : ""}<br><span class="muted">${esc(p.name)}</span></td>` +
         `<td>${esc(p.user)}</td><td>${esc(p.account)}<br>${qosCell}</td><td>${p.tasks > 1 ? `<span class="muted">each task: </span>` : ""}${req(p)}</td><td>${esc(p.partition)}</td><td class="num">${fmtMin(p.waited_min)}</td>` +
-        `<td>${scoreBar(p)}<b>${p.priority}</b></td><td><span class="badge ${p.feasibility}">${p.feasibility}</span><br><span class="muted">${esc(p.reason || "")}</span></td><td>${slurm}</td><td>${est}</td></tr>`;
+        `<td>${scoreBar(p)}<b>${p.priority}</b></td><td><span class="badge ${p.feasibility}">${p.feasibility}</span><br><span class="muted" title="${esc(p.reason || "")}">${esc(shortReason(p.reason))}</span></td><td>${slurm}</td><td>${est}</td></tr>`;
     }).join("") + (rows.length > 400 ? `<tr><td colspan="11" class="muted">… ${rows.length - 400} more rows (use the filters)</td></tr>` : "");
   }
 
