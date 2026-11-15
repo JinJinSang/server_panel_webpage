@@ -137,7 +137,7 @@
     const bins = 28, width = 250, hist = new Array(bins).fill(0);
     run.forEach(p => hist[Math.min(bins - 1, Math.floor(p.priority / width))]++);
     const top = Math.max(1, ...hist);
-    const myStd = s.estimates.whatif.find(w => w.qos === "standard")?.score, myPrio = s.estimates.whatif.find(w => w.qos === "priority")?.score;
+    const myStd = s.estimates.whatif.find(w => w.qos === "standard" && !w.fairshare_assumed)?.score, myPrio = s.estimates.whatif.find(w => w.qos === "priority" && !w.fairshare_assumed)?.score;
     $("#hist").innerHTML = hist.map((c, i) => `<div class="bin" style="height:${(100 * c / top).toFixed(1)}%" data-tip="${i * width}–${(i + 1) * width - 1} points: ${c} jobs"></div>`).join("") +
       [[myStd, "me, standard"], [myPrio, "me, priority"]].filter(x => x[0]).map(([v, l]) => `<div class="mark" style="left:${(100 * Math.min(v, bins * width) / (bins * width)).toFixed(2)}%"><span>${l} ${v}</span></div>`).join("");
     $("#hist-axis").innerHTML = `<span>0</span><span>${bins * width / 2}</span><span>${bins * width}+</span>`;
@@ -193,15 +193,15 @@
     }).join("") : `<p class="note">none</p>`;
 
     $("#whatif-note").textContent = `${skuName(s.config.whatif_sku)}, ${s.config.cores_per_gpu} cores and ${s.config.mem_per_gpu_gb} GB per GPU, account ${s.config.whatif_account}`;
-    const wh = `<tr><th>request</th><th>QoS</th><th class="num">score</th><th class="num">jobs ahead</th><th class="num">GPUs they want</th><th>start, by time limits</th><th>start, typical run times</th><th>history: median / p75 / p90</th></tr>`;
+    const wh = `<tr><th>request</th><th>QoS</th><th class="num">fair-share</th><th class="num">score</th><th class="num">jobs ahead</th><th class="num">GPUs they want</th><th>start, by time limits</th><th>start, typical run times</th><th>history: median / p75 / p90</th></tr>`;
     $("#whatif").innerHTML = wh + est.whatif.map(w => {
       const h = w.history ? `${fmtH(w.history.median_h)} / ${fmtH(w.history.p75_h)} / ${fmtH(w.history.p90_h)} <span class="muted">(n=${w.history.n})</span>` : "<span class='muted'>no data</span>";
-      return `<tr><td>${w.gpus}×${skuName(s.config.whatif_sku)}${w.nodes > 1 ? ` on ${w.nodes} nodes` : ""} · ${w.cores}c · ${w.mem_gb}G · ${w.hours}h</td><td>${w.qos}</td><td class="num">${w.score}</td><td class="num">${w.jobs_ahead} <span class="muted">(${w.tasks_ahead} tasks)</span></td><td class="num">${w.gpus_ahead}</td>` +
+      return `<tr${w.fairshare_assumed ? ' class="assumed"' : ""}><td>${w.gpus}×${skuName(s.config.whatif_sku)}${w.nodes > 1 ? ` on ${w.nodes} nodes` : ""} · ${w.cores}c · ${w.mem_gb}G · ${w.hours}h</td><td>${w.qos}</td><td class="num">${w.fairshare ?? "–"}${w.fairshare_assumed ? ' <span class="muted">if</span>' : ""}</td><td class="num">${w.score}</td><td class="num">${w.jobs_ahead} <span class="muted">(${w.tasks_ahead} tasks)</span></td><td class="num">${w.gpus_ahead}</td>` +
         `<td><b>${fmtMin(w.limit?.start_min)}</b> ${w.limit?.nodes?.length ? `<span class="muted">${w.limit.nodes.join(", ")}</span>` : w.limit?.start_min == null ? `<span class="muted">beyond ${s.config.horizon_h / 24} days</span>` : ""}</td>` +
         `<td><b>${fmtMin(w.typical?.start_min)}</b> ${w.typical?.nodes?.length ? `<span class="muted">${w.typical.nodes.join(", ")}</span>` : ""}</td><td>${h}</td></tr>`;
     }).join("");
     $("#whatif-legend").innerHTML = `<b>By time limits</b>: every running and higher-priority job is assumed to use its full time limit (pessimistic). <b>Typical run times</b>: each user's measured ratio of run time to limit is applied (default ${s.config.default_ratio}). ` +
-      `<b>History</b>: real waits of all users' jobs with the same request over the last ${hist?.days ?? 90} days. Jobs submitted later with a higher score, and group-QoS jobs, can still jump ahead.`;
+      `<b>History</b>: real waits of all users' jobs with the same request over the last ${hist?.days ?? 90} days. Rows marked <i>if</i> assume a fair-share score you do not have yet. Jobs submitted later with a higher score, and group-QoS jobs, can still jump ahead.`;
 
     const acc = hist?.accuracy;
     const ah = `<tr><th>request class</th><th class="num">jobs</th><th class="num">actual wait, median</th><th class="num">planner by limits: median error · |mean|</th><th class="num">planner typical: median error · |mean|</th><th class="num">Slurm's estimate: median error · |mean|</th></tr>`;
